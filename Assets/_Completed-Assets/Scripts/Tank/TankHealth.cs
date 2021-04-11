@@ -24,7 +24,6 @@ namespace Complete
         public float m_CurrentHealth;                      // How much health the tank currently has
         private bool m_Dead;                                // Has the tank been reduced beyond zero health yet?
         public CameraControl cameraControl;
-        public int thisIndex;
 
         private NetworkStartPosition[] spawnPoints;
 
@@ -65,7 +64,6 @@ namespace Complete
         private void OnEnable()
         {
             cameraControl.TankList.Add(transform);
-            thisIndex = cameraControl.TankList.LastIndexOf(transform);
             
             m_Slider.value = m_StartingHealth;
             m_FillImage.color = Color.green;
@@ -149,14 +147,12 @@ namespace Complete
             else if (gameObject.tag == "NPC")
             {
                 m_Dead = true;
-                gameObject.SetActive(false);
-                if(cameraControl.TankList[thisIndex].gameObject.tag == "NPC")
-                {
-                    cameraControl.TankList.RemoveAt(thisIndex);
-                }
+                cameraControl.TankList.Remove(this.transform);
+
                 
             }
-            
+
+            gameObject.SetActive(false);
         }
         
 

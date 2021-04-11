@@ -8,17 +8,29 @@ using Mirror;
 
 public class PlayerData : NetworkBehaviour
 {
-    TankMovement jugadorLocal;
+    TankManager jugadorLocal;
     public InputField inputNickName;
+    public ColorPicker picker;
+    public void Start()
+    {
+        jugadorLocal = GameObject.Find("LocalPlayer").GetComponent<TankManager>();
+        var prefs = FindObjectOfType<SetClientPreferences>();
+        inputNickName.text = jugadorLocal.nickname;
+        picker.SetSelectedColor(prefs.initialPlayerColor);
+    }
 
     public void CmdCambiarNombre()
-    {
-        
-        jugadorLocal = GameObject.Find("LocalPlayer").GetComponent<TankMovement>();
-        jugadorLocal.CmdCambiarNombreJugador(inputNickName.text);
+    {       
 
-
+        jugadorLocal.CmdCambiarNombreJugador(inputNickName.text);        
         //jugadorLocal.nickname = inputNickName.text;
 
+    }
+
+    public void CambiarColor()
+    {
+        Color color = picker.GetSelectedColor();
+        if (jugadorLocal is null) jugadorLocal = GameObject.Find("LocalPlayer").GetComponent<TankManager>();
+        jugadorLocal.CmdCambiarColorJugador(color);
     }
 }
