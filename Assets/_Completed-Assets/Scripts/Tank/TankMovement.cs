@@ -8,7 +8,7 @@ namespace Complete
 {
     public class TankMovement : NetworkBehaviour
     {
-        public int m_PlayerNumber = 1;              // Used to identify which tank belongs to which player.  This is set by this tank's manager
+
         public float m_Speed = 12f;                 // How fast the tank moves forward and back
         public float m_TurnSpeed = 180f;            // How fast the tank turns in degrees per second
         public AudioSource m_MovementAudio;         // Reference to the audio source used to play engine sounds. NB: different to the shooting audio source
@@ -24,10 +24,7 @@ namespace Complete
         private InputAction m_MoveAction;           // Move Action reference (Unity 2020 New Input System)
         private InputAction m_TurnAction;           // Turn Action reference (Unity 2020 New Input System)
         private bool isDisabled = false;            // To avoid enabling / disabling Input System when tank is destroyed
-        
-        [SyncVar (hook = "CambioDeNombre")]
-        public string nickname;
-        public Text Label;
+       
 
         private void Awake()
         {
@@ -99,8 +96,6 @@ namespace Complete
             m_MoveAction.performed += OnTankMove;
             m_TurnAction.performed += OnTankTurn;
 
-
-            Label = gameObject.transform.GetChild(5).GetChild(0).GetComponent<Text>();
         }
 
 
@@ -116,16 +111,6 @@ namespace Complete
             EngineAudio();
         }
 
-        public override void OnStartLocalPlayer()
-        {
-
-            foreach (MeshRenderer child in GetComponentsInChildren<MeshRenderer>())
-            {
-                child.material.color = Color.blue;
-            }
-            gameObject.name = "LocalPlayer";
-
-        }
 
         // Event called when this player's 'Move' action is triggered by the New Input System
         public void OnTankMove(InputAction.CallbackContext obj)
@@ -166,17 +151,6 @@ namespace Complete
             }
         }
 
-        [Command]
-        public void CmdCambiarNombreJugador(string nick)
-        {
-            nickname = nick;
-        }
-
-        private void CambioDeNombre(string oldNick, string newNick)
-        {
-            Label.text = newNick;
-            
-        }
 
 
         private void Move()

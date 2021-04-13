@@ -1,83 +1,133 @@
-﻿using System;
+﻿using Mirror;
+using System;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Complete
 {
     [Serializable]
-    public class TankManager
+    public class TankManager: NetworkBehaviour
     {
         // This class is to manage various settings on a tank
         // It works with the GameManager class to control how the tanks behave
         // and whether or not players have control of their tank in the 
         // different phases of the game
 
+        [SyncVar(hook = "CambioDeColor")]
         public Color m_PlayerColor;                             // This is the color this tank will be tinted
-        public Transform m_SpawnPoint;                          // The position and direction the tank will have when it spawns
-        [HideInInspector] public int m_PlayerNumber;            // This specifies which player this the manager for
-        [HideInInspector] public string m_ColoredPlayerText;    // A string that represents the player with their number colored to match their tank
-        [HideInInspector] public GameObject m_Instance;         // A reference to the instance of the tank when it is created
-        [HideInInspector] public int m_Wins;                    // The number of wins this player has so far
-        
+
+        [SyncVar]
+        public int m_Wins;                    // The number of wins this player has so far
+
+        [SyncVar(hook = "CambioDeNombre")]
+        public string nickname;
+
+        public string m_ColoredPlayerText
+        {
+            get
+            {
+                return "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + nickname + "</color>";
+            }
+        }
+
+        private Text Label;
 
         private TankMovement m_Movement;                        // Reference to tank's movement script, used to disable and enable control
         private TankShooting m_Shooting;                        // Reference to tank's shooting script, used to disable and enable control
         private GameObject m_CanvasGameObject;                  // Used to disable the world space UI during the Starting and Ending phases of each round
 
 
-        public void Setup ()
+
+        void Start ()
         {
             // Get references to the components
-            m_Movement = m_Instance.GetComponent<TankMovement> ();
-            m_Shooting = m_Instance.GetComponent<TankShooting> ();
-            m_CanvasGameObject = m_Instance.GetComponentInChildren<Canvas> ().gameObject;
+            m_Movement = GetComponent<TankMovement> ();
+            m_Shooting = GetComponent<TankShooting> ();
+            m_CanvasGameObject = GetComponentInChildren<Canvas> ().gameObject;
 
-            // Set the player numbers to be consistent across the scripts
-            m_Movement.m_PlayerNumber = m_PlayerNumber;
-            m_Shooting.m_PlayerNumber = m_PlayerNumber;
+            Label = gameObject.transform.GetChild(5).GetChild(0).GetComponent<Text>();
 
-            // Create a string using the correct color that says 'PLAYER 1' etc based on the tank's color and the player's number
-            m_ColoredPlayerText = "<color=#" + ColorUtility.ToHtmlStringRGB(m_PlayerColor) + ">PLAYER " + m_PlayerNumber + "</color>";
 
             // Get all of the renderers of the tank
-            MeshRenderer[] renderers = m_Instance.GetComponentsInChildren<MeshRenderer> ();
+            MeshRenderer[] renderers = GetComponentsInChildren<MeshRenderer> ();
 
-            // Go through all the renderers...
-            for (int i = 0; i < renderers.Length; i++)
-            {
-                // ... set their material color to the color specific to this tank
-                renderers[i].material.color = m_PlayerColor;
-            }
+            FindObjectOfType<GameManager>().m_Tanks.Add(this);
+        }
+
+        public override void OnStartLocalPlayer()
+        {
+            setColor();
+            gameObject.name = "LocalPlayer";
+
         }
 
 
         // Used during the phases of the game where the player shouldn't be able to control their tank
         public void DisableControl ()
         {
-            m_Movement.enabled = false;
-            m_Shooting.enabled = false;
+            if (isLocalPlayer)
+            {
+                m_Movement.enabled = false;
+                m_Shooting.enabled = false;
 
-            m_CanvasGameObject.SetActive (false);
+                m_CanvasGameObject.SetActive(false);
+            }
+
         }
 
 
         // Used during the phases of the game where the player should be able to control their tank
         public void EnableControl ()
         {
-            m_Movement.enabled = true;
-            m_Shooting.enabled = true;
+            if (isLocalPlayer)
+            {
+                m_Movement.enabled = true;
+                m_Shooting.enabled = true;
 
-            m_CanvasGameObject.SetActive (true);
+                m_CanvasGameObject.SetActive(true);
+            }
+
         }
 
-
-        // Used at the start of each round to put the tank into it's default state
-        public void Reset ()
+        void OnDestroy()
         {
-            m_Instance.transform.position = m_SpawnPoint.position;
-            m_Instance.transform.rotation = m_SpawnPoint.rotation;
+            var manager = FindObjectOfType<GameManager>();
+            if(manager != null) manager.m_Tanks.Remove(this);
 
-            m_Instance.SetActive (false);
-            m_Instance.SetActive (true);
+            var camera = FindObjectOfType<CameraControl>();
+            if(camera != null) camera.TankList.Remove(this.transform);
+
         }
+
+        [Command]
+        public void CmdCambiarNombreJugador(string nick)
+        {
+            nickname = nick;
+        }
+
+        private void CambioDeNombre(string oldNick, string newNick)
+        {
+            Label.text = newNick;
+        }
+
+        [Command]
+        public void CmdCambiarColorJugador(Color newColor)
+        {
+            m_PlayerColor = newColor;
+        }
+
+        private void CambioDeColor(Color oldColor, Color newColor)
+        {
+            setColor();
+        }
+
+        void setColor()
+        {
+            foreach (MeshRenderer child in GetComponentsInChildren<MeshRenderer>())
+            {
+                child.material.color = m_PlayerColor;
+            }
+        }
+
     }
 }
