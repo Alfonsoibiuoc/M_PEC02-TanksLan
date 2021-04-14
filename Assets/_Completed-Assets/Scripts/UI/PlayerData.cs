@@ -13,10 +13,17 @@ public class PlayerData : NetworkBehaviour
     public ColorPicker picker;
     public void Start()
     {
-        jugadorLocal = GameObject.Find("LocalPlayer").GetComponent<TankManager>();
-        var prefs = FindObjectOfType<SetClientPreferences>();
-        inputNickName.text = jugadorLocal.nickname;
-        picker.SetSelectedColor(prefs.initialPlayerColor);
+        if (!isServerOnly)
+        {
+            jugadorLocal = GameObject.Find("LocalPlayer").GetComponent<TankManager>();
+            if (jugadorLocal) inputNickName.text = jugadorLocal.nickname;
+
+            var prefs = FindObjectOfType<SetClientPreferences>();
+            picker.SetSelectedColor(prefs.initialPlayerColor);
+        }
+
+        inputNickName.gameObject.SetActive(!isServerOnly);
+        picker.gameObject.SetActive(!isServerOnly);
     }
 
     public void CmdCambiarNombre()
